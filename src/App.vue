@@ -8,7 +8,7 @@
             Connected Accounts: {{ accounts.join(", ") }}
           </div>
 
-          <!-- <pre>{{ methodsList }}</pre> -->
+          <pre>{{ methodInput }}</pre>
 
           <v-row class="my-4">
             <v-col cols="12" md="6">
@@ -40,18 +40,25 @@
                 {{ item.name }}
               </v-expansion-panel-header>
               <v-expansion-panel-content>
+                <!-- <pre>{{ item }}</pre> -->
                 <div v-if="item.inputs && item.inputs.length > 0">
                   <div v-for="(method, j) in item.inputs" :key="j">
                     <!-- {{ method }} -->
                     <v-text-field
                       outlined
-                      :name="method.name || ''"
-                      :label="method.name || ''"
+                      @input="onInput(item, method, $event)"
+                      :label="`${method.name} (${method.type})`"
                       :placeholder="method.internalType || ''"
                     ></v-text-field>
                   </div>
                 </div>
-                <v-btn class="float-right" color="success">Run</v-btn>
+                <v-btn
+                  class="float-right"
+                  color="success"
+                  @click="runMethod(item)"
+                >
+                  Run
+                </v-btn>
               </v-expansion-panel-content>
             </v-expansion-panel>
           </v-expansion-panels>
@@ -103,6 +110,7 @@
 <script>
 import Web3 from "web3";
 // import Contract from "web3-eth-contract";
+const web3 = new Web3(window.ethereum);
 
 export default {
   name: "App",
@@ -537,6 +545,8 @@ export default {
           type: "function",
         },
       ],
+      contract: null,
+      methodInput: {},
       tab: 0,
     };
   },
@@ -562,8 +572,6 @@ export default {
         console.log("MetaMask is installed!");
       }
 
-      const web3 = new Web3(window.ethereum);
-
       this.accounts = await web3.eth.getAccounts();
 
       if (this.accounts.length > 0) {
@@ -571,7 +579,7 @@ export default {
       }
 
       // contract to work on
-      const contract = new web3.eth.Contract(
+      this.contract = new web3.eth.Contract(
         this.contractAbi,
         this.contractAddress
       );
@@ -590,9 +598,9 @@ export default {
       });
 
       // const test = contract.name;
-      console.log("cotract name", contract.name);
-      console.log("cotract methods", contract.methods);
-      console.log("contract", contract);
+      console.log("cotract name", this.contract.name);
+      console.log("cotract methods", this.contract.methods);
+      console.log("contract", this.contract);
     },
     async connectMetamask() {
       //Will Start the metamask extension
@@ -607,6 +615,23 @@ export default {
     },
     async disconnectMetamask() {
       window.ethereum.close();
+    },
+    onInput(item, method, input) {
+      console.log("onInput", item, method, input);
+
+      if (!this.methodInput[item.name]) {
+        this.methodInput[item.name] = {};
+      }
+
+      this.methodInput[item.name][method.name] = input;
+    },
+    async runMethod(method) {
+      const args = this.methodInput[method.name]["account"];
+      const result = await this.contract.methods[method.name](args).call();
+
+      console.log("onInput", method, this.methodInput);
+
+      console.log("runmethod", this.accounts[0], result);
     },
   },
 };
