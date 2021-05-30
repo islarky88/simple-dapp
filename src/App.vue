@@ -8,7 +8,7 @@
             Connected Accounts: {{ accounts.join(", ") }}
           </div>
 
-          <pre>{{ methodInput }}</pre>
+          <pre>{{ result }}</pre>
 
           <v-row class="my-4">
             <v-col cols="12" md="6">
@@ -53,12 +53,16 @@
                   </div>
                 </div>
                 <v-btn
-                  class="float-right"
+                  class="float-right mt-7"
                   color="success"
                   @click="runMethod(item)"
                 >
                   Run
                 </v-btn>
+
+                <!-- <v-card class="pa-2 mb-5">
+                  {{ result[item.name] }}
+                </v-card> -->
               </v-expansion-panel-content>
             </v-expansion-panel>
           </v-expansion-panels>
@@ -547,6 +551,7 @@ export default {
       ],
       contract: null,
       methodInput: {},
+      result: {},
       tab: 0,
     };
   },
@@ -626,12 +631,36 @@ export default {
       this.methodInput[item.name][method.name] = input;
     },
     async runMethod(method) {
-      const args = this.methodInput[method.name]["account"];
-      const result = await this.contract.methods[method.name](args).call();
+      // get the list of parameters
 
-      console.log("onInput", method, this.methodInput);
+      console.log(method);
+      let inputs = [];
+      // check if method has inputs. taking note of the sequence to use later
+      if (method.inputs && method.inputs.length > 0) {
+        inputs = method.inputs.map((input) => input.name);
+      }
 
-      console.log("runmethod", this.accounts[0], result);
+      console.log("inputs", inputs);
+
+      let args = [];
+      // fetching the input based on the sequence for the parameters
+      inputs.forEach((input) => {
+        args.push(this.methodInput[method.name][input]);
+      });
+
+      try {
+        // calling the actual function
+        const result = await this.contract.methods[method.name](...args).call();
+        alert(JSON.stringify(result));
+        this.result[method.name] = result;
+      } catch (error) {
+        console.log(error);
+        this.result[method.name] = error.message;
+      }
+
+      // const result = result
+
+      console.log("this.result", method, this.result);
     },
   },
 };
