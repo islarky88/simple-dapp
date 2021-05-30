@@ -567,8 +567,8 @@ export default {
       return methods;
     },
   },
-  mounted() {
-    this.initialize();
+  async mounted() {
+    await this.initialize();
   },
   methods: {
     async initialize() {
@@ -633,8 +633,8 @@ export default {
     async runMethod(method) {
       // get the list of parameters
 
-      console.log(method);
       let inputs = [];
+
       // check if method has inputs. taking note of the sequence to use later
       if (method.inputs && method.inputs.length > 0) {
         inputs = method.inputs.map((input) => input.name);
@@ -643,6 +643,7 @@ export default {
       console.log("inputs", inputs);
 
       let args = [];
+
       // fetching the input based on the sequence for the parameters
       inputs.forEach((input) => {
         args.push(this.methodInput[method.name][input]);
@@ -651,10 +652,15 @@ export default {
       try {
         // calling the actual function
         const result = await this.contract.methods[method.name](...args).call();
-        alert(JSON.stringify(result));
+
+        // this should save the result per panel
         this.result[method.name] = result;
+
+        // show in alert for now
+        alert(JSON.stringify(result));
       } catch (error) {
         console.log(error);
+        alert(error.message);
         this.result[method.name] = error.message;
       }
 
